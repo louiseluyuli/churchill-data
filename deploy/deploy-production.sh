@@ -3,7 +3,8 @@
 set -Eeuo pipefail
 umask 027
 
-SOURCE=/home/codexuser/churchill-data
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+SOURCE=$(cd -- "$SCRIPT_DIR/.." && pwd -P)
 RELEASES=/srv/churchill/releases
 CURRENT=/srv/churchill/current
 PROD_DB=/var/lib/churchill/churchill_prod.sqlite3
@@ -97,12 +98,23 @@ if [[ $MODE != initial && -n $dirty && $ALLOW_DIRTY -ne 1 ]]; then
     exit 1
 fi
 
-# Tests always use a disposable development-only database.
-TEST_DB=$(mktemp /tmp/churchill-deploy-tests.XXXXXX.sqlite3)
-trap 'rm -f "$TEST_DB"; cleanup' EXIT
-runuser -u codexuser -- env DATABASE_URL="sqlite:///$TEST_DB" \
-    "$SOURCE/.venv/bin/pytest" -q "$SOURCE/tests"
-rm -f "$TEST_DB"
+# Complete the development-only preflight before changing any production state.
+install -d -o codexuser -g codexuser -m 0750 "$SOURCE/data"
+chown codexuser:codexuser "$SOURCE/data"
+runuser -u codexuser -- env \
+    DATABASE_URL="sqlite:////home/codexuser/churchill-data/data/churchill_dev.sqlite3" \
+    "$SOURCE/scripts/dev-test.sh" "$SOURCE/tests"
+
+if [[ $MODE == initial ]]; then
+    [[ -f $LIVE_SOURCE ]] || { echo "Live source database missing: $LIVE_SOURCE" >&2; exit 1; }
+    "$SOURCE/.venv/bin/python" "$SOURCE/deploy/validate_database.py" \
+        "$LIVE_SOURCE" --baseline "$SOURCE/deploy/baseline-counts.txt"
+elif [[ ! -f $PROD_DB ]]; then
+    echo "Production database missing: $PROD_DB" >&2
+    exit 1
+else
+    "$SOURCE/.venv/bin/python" "$SOURCE/deploy/validate_database.py" "$PROD_DB"
+fi
 
 if ! id churchill >/dev/null 2>&1; then
     useradd --system --home-dir /nonexistent --no-create-home \
@@ -126,7 +138,6 @@ if [[ -f $ENV_FILE ]]; then
 fi
 
 if [[ $MODE == initial ]]; then
-    [[ -f $LIVE_SOURCE ]] || { echo "Live source database missing: $LIVE_SOURCE" >&2; exit 1; }
     "$SOURCE/.venv/bin/python" "$SOURCE/deploy/sqlite_backup.py" \
         "$LIVE_SOURCE" "$BACKUPS/pre-migration-$TIMESTAMP.sqlite3"
     if [[ ! -f $PROD_DB ]]; then
@@ -144,13 +155,6 @@ elif [[ ! -f $PROD_DB ]]; then
 else
     "$SOURCE/.venv/bin/python" "$SOURCE/deploy/sqlite_backup.py" \
         "$PROD_DB" "$BACKUPS/pre-deploy-$TIMESTAMP.sqlite3"
-fi
-
-if [[ $MODE == initial ]]; then
-    "$SOURCE/.venv/bin/python" "$SOURCE/deploy/validate_database.py" \
-        "$PROD_DB" --baseline "$SOURCE/deploy/baseline-counts.txt"
-else
-    "$SOURCE/.venv/bin/python" "$SOURCE/deploy/validate_database.py" "$PROD_DB"
 fi
 
 # Archive the validated working tree, including untracked application files.

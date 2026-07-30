@@ -3,7 +3,8 @@
 set -Eeuo pipefail
 umask 027
 
-SOURCE=/home/codexuser/churchill-data
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+SOURCE=$(cd -- "$SCRIPT_DIR/.." && pwd -P)
 PROD_DB=/var/lib/churchill/churchill_prod.sqlite3
 DEV_DB="$SOURCE/data/churchill_dev.sqlite3"
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)

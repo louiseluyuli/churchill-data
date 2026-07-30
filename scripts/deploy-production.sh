@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec /home/codexuser/churchill-data/deploy/deploy-production.sh "$@"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+repository_root=$(cd -- "$script_dir/.." && pwd -P)
+exec "$repository_root/deploy/deploy-production.sh" "$@"

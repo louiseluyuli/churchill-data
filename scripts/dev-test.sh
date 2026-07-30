@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. /home/codexuser/churchill-data/scripts/dev-env.sh
-test_database=$(mktemp /tmp/churchill-tests.XXXXXX.sqlite3)
-trap 'rm -f "$test_database"' EXIT
-export DATABASE_URL="sqlite:///$test_database"
-exec .venv/bin/pytest -q "$@"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+. "$script_dir/dev-env.sh"
+[[ $EUID -ne 0 ]] || {
+    echo "Development tests must not run as root." >&2
+    exit 1
+}
+exec "$DEV_ROOT/.venv/bin/pytest" -q "$@"
