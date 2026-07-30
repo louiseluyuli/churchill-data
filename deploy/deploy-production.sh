@@ -16,6 +16,7 @@ LIVE_SOURCE="$SOURCE/churchill_bold.sqlite3"
 MODE=deploy
 ALLOW_DIRTY=0
 REBUILD_DATABASE=0
+SKIP_PUBLIC_CHECK=0
 PUBLIC_URL=${CHURCHILL_PUBLIC_URL:-}
 SMOKE_PORT=8765
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
@@ -28,7 +29,7 @@ CONFIG_INSTALLED=0
 SMOKE_PID=
 
 usage() {
-    echo "Usage: $0 [--initial] [--allow-dirty] [--rebuild-database] [--public-url URL]"
+    echo "Usage: $0 [--initial] [--allow-dirty] [--rebuild-database] [--public-url URL] [--skip-public-check]"
 }
 
 while (($#)); do
@@ -37,6 +38,7 @@ while (($#)); do
         --allow-dirty) ALLOW_DIRTY=1 ;;
         --rebuild-database) REBUILD_DATABASE=1 ;;
         --public-url) shift; PUBLIC_URL=${1:?missing URL} ;;
+        --skip-public-check) SKIP_PUBLIC_CHECK=1 ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; exit 2 ;;
     esac
@@ -47,10 +49,16 @@ done
 [[ -d "$SOURCE/.git" && -f "$SOURCE/requirements.txt" ]] || {
     echo "Development source not found at $SOURCE." >&2; exit 1;
 }
-[[ $PUBLIC_URL =~ ^https://[a-z0-9-]+\.trycloudflare\.com/?$ ]] || {
-    echo "Pass the existing Quick Tunnel URL with --public-url." >&2; exit 1;
-}
-PUBLIC_URL=${PUBLIC_URL%/}
+if [[ $SKIP_PUBLIC_CHECK -eq 0 && -z $PUBLIC_URL && $MODE == initial ]]; then
+    SKIP_PUBLIC_CHECK=1
+fi
+if [[ $SKIP_PUBLIC_CHECK -eq 0 ]]; then
+    [[ $PUBLIC_URL =~ ^https://[a-z0-9-]+\.trycloudflare\.com/?$ ]] || {
+        echo "Pass the existing Quick Tunnel URL with --public-url or use --skip-public-check." >&2
+        exit 1
+    }
+    PUBLIC_URL=${PUBLIC_URL%/}
+fi
 
 cleanup() {
     if [[ -n ${SMOKE_PID:-} ]]; then
@@ -228,16 +236,23 @@ for _ in $(seq 1 30); do
     sleep 1
 done
 curl -fsS http://127.0.0.1:8000/health >/dev/null
+curl -fsS http://127.0.0.1:8000/ >/dev/null
 for path in "${SMOKE_PATHS[@]}"; do
     curl -fsS "http://127.0.0.1:8000$path" >/dev/null
 done
-for _ in $(seq 1 20); do
-    curl -fsS "$PUBLIC_URL/" >/dev/null && break
-    sleep 1
-done
-curl -fsS "$PUBLIC_URL/" >/dev/null
-systemctl is-active --quiet churchill-tunnel.service
+if [[ $SKIP_PUBLIC_CHECK -eq 0 ]]; then
+    for _ in $(seq 1 20); do
+        curl -fsS "$PUBLIC_URL/" >/dev/null && break
+        sleep 1
+    done
+    curl -fsS "$PUBLIC_URL/" >/dev/null
+    systemctl is-active --quiet churchill-tunnel.service
+fi
 
 trap - ERR
 echo "Deployment complete: $RELEASE"
-echo "The tunnel service was neither modified nor restarted."
+if [[ $SKIP_PUBLIC_CHECK -eq 1 ]]; then
+    echo "Public URL verification was skipped; the tunnel service was not touched."
+else
+    echo "The tunnel service was neither modified nor restarted."
+fi

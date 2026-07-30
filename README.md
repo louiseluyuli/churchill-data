@@ -54,7 +54,7 @@ python -m pip install -r requirements.txt
 ```
 
 Development always uses `data/churchill_dev.sqlite3`. These wrappers export its
-absolute `DATABASE_URL`; tests use a disposable database:
+absolute `DATABASE_URL`; tests run against that explicit development database:
 
 ```bash
 scripts/dev-test.sh
@@ -72,7 +72,7 @@ Production is changed only by an explicit root-run deployment:
 
 ```bash
 sudo /home/codexuser/churchill-data/scripts/deploy-production.sh \
-  --public-url https://EXISTING.trycloudflare.com
+  --skip-public-check
 sudo /home/codexuser/churchill-data/scripts/sync-production-to-development.sh
 ```
 
@@ -82,6 +82,13 @@ switch the active symlink, and restart only the web service. Failed verification
 restores the previous release, service, and replaced database. Future deployments
 reject dirty Git state unless `--allow-dirty` is explicit; `--rebuild-database`
 rebuilds a candidate from preserved raw documents and validates it before use.
+
+Use `--public-url https://EXISTING.trycloudflare.com` to verify an existing
+Quick Tunnel after the local checks. Use `--skip-public-check` for local-only
+verification of `http://127.0.0.1:8000/health` and
+`http://127.0.0.1:8000/`; this never changes or checks the tunnel service.
+Initial migrations do not require `--public-url` and default to local-only
+verification when neither public-check option is supplied.
 
 ## Boundaries
 
