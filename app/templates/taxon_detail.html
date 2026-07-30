@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{taxon.finest_taxon_name}} · Churchill BOLD{% endblock %}
+{% block content %}
+<p><a href="/{{group}}s">← {{'Plants' if group == 'plant' else 'Insects'}}</a></p>
+<section class="{{group}}">
+  <h1>{{taxon.finest_taxon_name}}</h1>
+  <p class="rank">Finest supplied rank: {{taxon.finest_taxon_rank}}</p>
+  <h2>Complete taxonomy path</h2>
+  <dl class="taxonomy">{% for label,value in [('Kingdom',taxon.kingdom),('Phylum',taxon.phylum),('Class',taxon.class_name),('Order',taxon.order_name),('Family',taxon.family),('Subfamily',taxon.subfamily),('Tribe',taxon.tribe),('Genus',taxon.genus),('Species',taxon.species),('Subspecies',taxon.subspecies)] %}<div><dt>{{label}}</dt><dd>{{value or 'Not provided'}}</dd></div>{% endfor %}</dl>
+  <h2>Supporting evidence</h2>
+  <p>{{taxon.evidence|length}} evidence record(s), {{raw_count}} raw document(s).</p>
+  <div class="scroll">
+    <table><thead><tr><th>Evidence type</th><th>Data source</th><th>Source record ID</th><th>Process ID</th><th>Date</th><th>Site / locality</th><th>Institution</th><th>Institution code</th><th>Collection code</th><th>Catalog number</th></tr></thead>
+    <tbody>{% for item in taxon.evidence %}<tr><td>{{item.evidence_type}}</td><td>{{item.data_source}}</td><td><a href="/{{group}}s/evidence/{{item.id}}">{{item.source_record_id}}</a></td><td>{{item.process_id or 'Not provided'}}</td><td>{{item.collection_date or 'Not provided'}}</td><td>{{item.site or item.locality or 'Not provided'}}</td><td>{{item.institution_name or 'Not provided'}}</td><td>{{item.institution_code or 'Not provided'}}</td><td>{{item.collection_code or 'Not provided'}}</td><td>{{item.catalog_number or 'Not provided'}}</td></tr>{% endfor %}</tbody></table>
+  </div>
+</section>
+{% endblock %}

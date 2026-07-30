@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{title}} · Churchill BOLD prototype{% endblock %}
+{% block content %}
+<section class="{{group}}">
+  <h1>{{title}}</h1>
+  <p>{{total_taxa}} complete BOLD-supplied taxonomy path(s). Page {{page}} of {{total_pages}}.</p>
+  <div class="scroll">
+    <table id="{{group}}-taxa-table">
+      <thead><tr><th>Finest taxon</th><th>Rank</th>{% for rank in ['Kingdom','Phylum','Class','Order','Family','Subfamily','Tribe','Genus','Species','Subspecies'] %}<th>{{rank}}</th>{% endfor %}<th>Evidence</th><th>Documents</th></tr></thead>
+      <tbody>
+      {% for t in taxa %}
+        <tr>
+          <td><a href="/{{group}}s/taxa/{{t.id}}">{{t.finest_taxon_name}}</a></td><td>{{t.finest_taxon_rank}}</td>
+          {% for value in [t.kingdom,t.phylum,t.class_name,t.order_name,t.family,t.subfamily,t.tribe,t.genus,t.species,t.subspecies] %}<td>{{value or 'Not provided'}}</td>{% endfor %}
+          <td><a href="/{{group}}s/taxa/{{t.id}}">{{t.evidence|length}}</a></td><td>{{t.evidence|sum(attribute='source_document_count')}}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="14">No taxa loaded yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <nav class="pagination" aria-label="{{title}} pagination">
+    {% if page > 1 %}<a href="/{{group}}s?page={{page-1}}" rel="prev">Previous</a>{% else %}<span>Previous</span>{% endif %}
+    {% for number in page_numbers %}<a href="/{{group}}s?page={{number}}" {% if number == page %}aria-current="page"{% endif %}>{{number}}</a>{% endfor %}
+    {% if page < total_pages %}<a href="/{{group}}s?page={{page+1}}" rel="next">Next</a>{% else %}<span>Next</span>{% endif %}
+  </nav>
+</section>
+{% endblock %}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Churchill BOLD prototype{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <a href="/" class="brand">Churchill BOLD</a>
+  <nav aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/plants">Plants</a>
+    <a href="/insects">Insects</a>
+  </nav>
+</header>
+<main>
+  <div class="notice"><strong>Prototype boundary:</strong> Churchill is provisionally defined as a 50 km great-circle radius around 58.780833, −94.186944 (WGS84 / EPSG:4326). This is not an official scientific boundary. Current evidence comes from BOLD. Taxonomy is shown only to the finest rank supplied by BOLD; lower ranks are not inferred.</div>
+  {% block content %}{% endblock %}
+</main>
+<footer>Read-only teacher-facing prototype · Current data source: BOLD Data Portal</footer>
+</body>
+</html>

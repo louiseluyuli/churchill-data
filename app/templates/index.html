@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Home · Churchill BOLD prototype{% endblock %}
+{% block content %}
+<h1>Evidence for taxa recorded around Churchill</h1>
+<p>This small prototype connects complete BOLD-supplied taxonomy paths to evidence records and their original marker documents. “Insect taxa” does not imply confirmed pollinator status.</p>
+{% macro group(name,key,data) %}
+<section class="{{key}}">
+  <div class="section-heading"><h2>{{name}}</h2><a href="/{{key}}s">View all {{name|lower}}</a></div>
+  <div class="cards">
+    <div><b>{{data.taxon_count}}</b><span>Unique taxa</span></div>
+    <div><b>{{data.species_count}}</b><span>Species-level taxa</span></div>
+    <div><b>{{data.evidence_count}}</b><span>Evidence records</span></div>
+    <div><b>{{data.raw_count}}</b><span>Raw documents</span></div>
+    <div><b>{{data.conflict_count}}</b><span>Taxonomy conflicts</span></div>
+  </div>
+  <h3>Preview</h3>
+  <div class="scroll">
+    <table id="{{key}}-taxa-preview">
+      <thead><tr><th>Finest taxon</th><th>Rank</th><th>Evidence</th><th>Documents</th></tr></thead>
+      <tbody>
+      {% for t in data.taxa %}
+        <tr><td><a href="/{{key}}s/taxa/{{t.id}}">{{t.finest_taxon_name}}</a></td><td>{{t.finest_taxon_rank}}</td><td>{{t.evidence|length}}</td><td>{{t.evidence|sum(attribute='source_document_count')}}</td></tr>
+      {% else %}
+        <tr><td colspan="4">No taxa loaded yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endmacro %}
+{{group('Plants','plant',plants)}}
+{{group('Insect taxa','insect',insects)}}
+{% endblock %}

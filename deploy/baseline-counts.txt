@@ -1,0 +1,6 @@
+ingestion_batches=3
+plant_taxa=80
+insect_taxa=43
+plant_evidence=100
+insect_evidence=100
+bold_raw_documents=387

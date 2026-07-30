@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{evidence.source_record_id}} · Churchill BOLD{% endblock %}
+{% block content %}
+<p><a href="/{{group}}s">← {{'Plants' if group == 'plant' else 'Insects'}}</a>{% if evidence.taxon %} · <a href="/{{group}}s/taxa/{{evidence.taxon.id}}">Taxon: {{evidence.taxon.finest_taxon_name}}</a>{% endif %}</p>
+<section class="{{group}}">
+  <h1>Evidence {{evidence.source_record_id}}</h1>
+  {% if evidence.taxonomy_conflict %}<p class="warning">Taxonomy conflict: source marker documents disagree at one or more ranks. This evidence record is excluded from normal taxon aggregation.</p>{% endif %}
+  <h2>Evidence and provenance</h2>
+  <dl class="details">{% for label,value in [('Evidence type',evidence.evidence_type),('Data source',evidence.data_source),('Source record ID',evidence.source_record_id),('BOLD process ID',evidence.process_id),('Sample ID',evidence.sample_id),('Source dataset',evidence.source_dataset),('Taxonomy conflict','Yes' if evidence.taxonomy_conflict else 'No')] %}<div><dt>{{label}}</dt><dd>{{value or 'Not provided'}}</dd></div>{% endfor %}</dl>
+  <h2>Taxonomy</h2>
+  {% if evidence.taxon %}<dl class="taxonomy">{% for label,value in [('Kingdom',evidence.taxon.kingdom),('Phylum',evidence.taxon.phylum),('Class',evidence.taxon.class_name),('Order',evidence.taxon.order_name),('Family',evidence.taxon.family),('Subfamily',evidence.taxon.subfamily),('Tribe',evidence.taxon.tribe),('Genus',evidence.taxon.genus),('Species',evidence.taxon.species),('Subspecies',evidence.taxon.subspecies)] %}<div><dt>{{label}}</dt><dd>{{value or 'Not provided'}}</dd></div>{% endfor %}</dl>{% else %}<p>No single compatible taxonomy path is available.</p>{% endif %}
+  <h2>Collection and location</h2>
+  <dl class="details">{% for label,value in [('Collection date',evidence.collection_date),('Collector',evidence.collector),('Site',evidence.site),('Locality',evidence.locality),('Province/state',evidence.province_state),('Country',evidence.country),('Coordinates','%.5f, %.5f'|format(evidence.latitude,evidence.longitude)),('Distance','%.2f km'|format(evidence.distance_km)),('Institution',evidence.institution_name),('Institution code',evidence.institution_code),('Collection code',evidence.collection_code),('Catalog number',evidence.catalog_number)] %}<div><dt>{{label}}</dt><dd>{{value or 'Not provided'}}</dd></div>{% endfor %}</dl>
+  <h2>Associated BOLD documents</h2>
+  <table><thead><tr><th>Record ID</th><th>Marker code</th><th>BOLD source link</th></tr></thead><tbody>{% for document in evidence.raw_documents %}<tr><td>{{document.record_id}}</td><td>{{document.marker_code or 'Not provided'}}</td><td>{% if document.source_record_url %}<a href="{{document.source_record_url}}" rel="noopener noreferrer">BOLD-supplied source</a>{% else %}Not provided{% endif %}</td></tr>{% endfor %}</tbody></table>
+</section>
+{% endblock %}
